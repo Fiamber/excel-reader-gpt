@@ -1,12 +1,12 @@
 // /api/lib/dedupe.js
-const crypto = require("crypto");
+import crypto from "crypto";
 
-function makeStableId({ titulo, empresa, url }) {
+export function makeStableId({ titulo, empresa, url }) {
   const base = `${titulo || ""}||${empresa || ""}||${url || ""}`.trim();
   return crypto.createHash("sha1").update(base).digest("hex");
 }
 
-function dedupeOffers(offers = []) {
+export function dedupeOffers(offers = []) {
   const seen = new Set();
   const out = [];
 
@@ -15,7 +15,6 @@ function dedupeOffers(offers = []) {
     if (seen.has(key)) continue;
     seen.add(key);
 
-    // Aseguramos id estable
     out.push({
       ...o,
       id: o.id || makeStableId(o),
@@ -23,9 +22,3 @@ function dedupeOffers(offers = []) {
   }
   return out;
 }
-
-module.exports = {
-  makeStableId,
-  dedupeOffers,
-};
-

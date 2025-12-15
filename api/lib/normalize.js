@@ -1,5 +1,5 @@
 // /api/lib/normalize.js
-function normalizeText(input = "") {
+export function normalizeText(input = "") {
   return String(input)
     .trim()
     .toLowerCase()
@@ -12,30 +12,21 @@ function normalizeText(input = "") {
     .replace(/ñ/g, "n");
 }
 
-function normalizeCity(city = "") {
+export function normalizeCity(city = "") {
   const c = normalizeText(city);
   if (!c) return "";
 
-  // Alias típicos
   if (["bcn", "barna", "barcelona"].includes(c)) return "Barcelona";
   if (["mad", "madrid"].includes(c)) return "Madrid";
 
-  // Capitaliza primera letra de cada palabra
   return c
     .split(" ")
     .map(w => (w ? w[0].toUpperCase() + w.slice(1) : ""))
     .join(" ");
 }
 
-function normalizeRole(role = "") {
-  // No hacemos magia aún: solo limpiamos.
-  // Más adelante puedes meter sinónimos / OR queries.
+export function normalizeRole(role = "") {
   return normalizeText(role);
 }
 
-module.exports = {
-  normalizeText,
-  normalizeCity,
-  normalizeRole,
-};
 

@@ -1,14 +1,11 @@
 // /api/ofertas.js
-const { dedupeOffers } = require("./lib/dedupe");
+import { dedupeOffers } from "./lib/dedupe.js";
+import { search as searchIndeed } from "./providers/indeed.js";
 
-const indeedProvider = require("./providers/indeed");
-
-// Providers disponibles
 const PROVIDERS = {
-  indeed: indeedProvider,
+  indeed: { search: searchIndeed },
 };
 
-// Helpers
 function parseSourcesParam(sourcesParam) {
   if (!sourcesParam) return ["indeed"];
   return String(sourcesParam)
@@ -17,10 +14,17 @@ function parseSourcesParam(sourcesParam) {
     .filter(Boolean);
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   try {
-    const { rol, ciudad = "", pais = "es", limite = "5", remote = "any", sources, fresh_days = "14" } =
-      req.query || {};
+    const {
+      rol,
+      ciudad = "",
+      pais = "es",
+      limite = "5",
+      remote = "any",
+      sources,
+      fresh_days = "14",
+    } = req.query || {};
 
     if (!rol || String(rol).trim().length === 0) {
       return res.status(400).json({ error: "Missing required query param: rol" });
@@ -29,18 +33,15 @@ module.exports = async (req, res) => {
     const limitNum = Math.max(1, Math.min(parseInt(limite, 10) || 5, 20));
     const srcList = parseSourcesParam(sources);
 
-    const enabledProviders = srcList.filter(s => PROVIDERS[s]);
-    if (enabledProviders.length === 0) enabledProviders.push("indeed");
+    const enabled = srcList.filter(s => PROVIDERS[s]);
+    if (enabled.length === 0) enabled.push("indeed");
 
     let allOffers = [];
-
-    for (const src of enabledProviders) {
+    for (const src of enabled) {
       if (allOffers.length >= limitNum) break;
-
-      const provider = PROVIDERS[src];
       const remaining = limitNum - allOffers.length;
 
-      const offers = await provider.search({
+      const offers = await PROVIDERS[src].search({
         rol,
         ciudad,
         pais,
@@ -53,7 +54,6 @@ module.exports = async (req, res) => {
     }
 
     allOffers = dedupeOffers(allOffers).slice(0, limitNum);
-
     return res.status(200).json(allOffers);
   } catch (err) {
     return res.status(500).json({
@@ -61,5 +61,4 @@ module.exports = async (req, res) => {
       details: err?.message || String(err),
     });
   }
-};
-
+}
